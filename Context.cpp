@@ -34,28 +34,41 @@ Context::~Context()
         heap_caps_free(alpha.second);
 }
 
-void Context::init()
+void Context::createFrameBuffer()
 {
-    if (inited)
-        return;
     pixels.first = static_cast<uint16_t*>(heap_caps_malloc(width * height * sizeof(uint16_t), MALLOC_CAP_SPIRAM));
     pixels.second = static_cast<uint16_t*>(heap_caps_malloc(width * height * sizeof(uint16_t), MALLOC_CAP_SPIRAM));
+}
 
+void Context::createDepthBuffer()
+{
     if (config->depth)
     {
         depth.first = static_cast<uint16_t*>(heap_caps_malloc(width * height * sizeof(uint16_t), MALLOC_CAP_SPIRAM));
         depth.second = static_cast<uint16_t*>(heap_caps_malloc(width * height * sizeof(uint16_t), MALLOC_CAP_SPIRAM));
     }
+}
+
+void Context::createStencilBuffer()
+{
     if (config->stencil)
     {
         stencil.first = static_cast<uint8_t*>(heap_caps_malloc(width * height * sizeof(uint8_t), MALLOC_CAP_SPIRAM));
         stencil.second = static_cast<uint8_t*>(heap_caps_malloc(width * height * sizeof(uint8_t), MALLOC_CAP_SPIRAM));
     }
+}
+
+void Context::createAlphaBuffer()
+{
     if (config->alpha)
     {
         alpha.first = static_cast<uint8_t*>(heap_caps_malloc(width * height * sizeof(uint8_t), MALLOC_CAP_SPIRAM));
         alpha.second = static_cast<uint8_t*>(heap_caps_malloc(width * height * sizeof(uint8_t), MALLOC_CAP_SPIRAM));
     }
+}
+
+void Context::initViewport()
+{
     glViewportHeight = height;
     glViewportWidth = width;
 }

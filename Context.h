@@ -61,7 +61,6 @@ struct Context
     std::pair<uint8_t*, uint8_t*> stencil;
     std::pair<uint8_t*, uint8_t*> alpha;
     const Config* config;
-    bool inited = false;
 
     bool* surfaceFirstFrameBuffer = nullptr;
     uint16_t width = 0;
@@ -128,6 +127,9 @@ struct Context
     Context(const void* config);
 
     ~Context();
-
-    void init();
+    void createFrameBuffer();
+    void createDepthBuffer();
+    void createStencilBuffer();
+    void createAlphaBuffer();
+    void initViewport();
 };

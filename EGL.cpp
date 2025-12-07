@@ -1,16 +1,17 @@
 #include "EGL.h"
 #include <cmath>
 #include <vector>
-#include "TFT_eSPI.h"
 #include "Context.h"
+#include "ABCOS.h"
 
 #define LIBRARY_NAME "EGL"
 
 static EGLint lastError = EGL_SUCCESS;
 
+//no more double buffering
 struct Surface
 {
-    TFT_eSPI tft;
+    sfg::Display* display;
     std::pair<uint16_t*, uint16_t*>* pixels = nullptr;
     uint16_t* width = nullptr;
     uint16_t* height = nullptr;
@@ -26,17 +27,9 @@ struct Surface
         if (width == 0 || height == 0)
             return;
         inited = true;
+        display = OS::InitDisplay();
         *this->width = width;
         *this->height = height;
-        tft.init();
-        if (TFT_HEIGHT == width && TFT_WIDTH == height)
-            tft.setRotation(3);
-        else if (TFT_HEIGHT == height && TFT_WIDTH == width)
-            tft.setRotation(2);
-        else
-        {
-            ESP_LOGE(LIBRARY_NAME, "Invalid width/height combo %d %d", width, height);
-        }
     }
     ~Surface()
     {
@@ -45,14 +38,9 @@ struct Surface
     {
         if (!pixels)
             return;
-        // int64_t timer = micros();
-        if (firstFrameBuffer)
-            tft.pushImage(0, 0, *width, *height, &pixels->first[0]);
-        else
-            tft.pushImage(0, 0, *width, *height, &pixels->second[0]);
-        // int64_t diff = micros() - timer;
-        // ESP_LOGI(LIBRARY_NAME, "Swap buffers %lld", diff);
-        firstFrameBuffer = !firstFrameBuffer;
+        OS::Draw();
+        display->display();
+        OS::FrameStart();
     }
 };
 
@@ -71,10 +59,15 @@ struct ABCv2_Display
 extern Context* context;
 ABCv2_Display eglABCv2;
 
-void ESPCreateWindow(uint16_t width, uint16_t height)
+void ESPCreateWindow(const uint16_t width, const uint16_t height)
 {
     eglABCv2.surface->init(width, height);
-    eglABCv2.context->init();
+    eglABCv2.context->pixels.first = eglABCv2.surface->display->getBuffer();
+    eglABCv2.context->pixels.first = eglABCv2.surface->display->getBuffer();
+    eglABCv2.context->createDepthBuffer();
+    eglABCv2.context->createStencilBuffer();
+    eglABCv2.context->createAlphaBuffer();
+    eglABCv2.context->initViewport();
 }
 
 EGLBoolean eglBindAPI(EGLenum api)
@@ -285,7 +278,7 @@ EGLBoolean eglGetConfigs(EGLDisplay dpy, EGLConfig* configs, EGLint config_size,
     if (configs != nullptr)
     {
         for (int8_t i = 0; i < config_size && i < display->configs.size(); i++)
-            configs[i] = &display->configs[i];
+            configs[i] = &display->configs.at(i);
     }
     *num_config = display->configs.size();
     return EGL_TRUE;
